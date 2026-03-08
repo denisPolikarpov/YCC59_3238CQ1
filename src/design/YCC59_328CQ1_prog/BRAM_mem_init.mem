@@ -1,4 +1,4 @@
-// Service constant (non-read, no-write mem space)
+// Service constants (non-read, no-write mem space)
 @00 15
 @01 D5
 @02 A5
@@ -28,8 +28,9 @@
 @15 00
 @16 00
 @17 00
+// TR, EN and other signals
+@18 40
 // Selftest output (read only space)
-@18 00
 @19 00
 @1A 00
 @1B 00
