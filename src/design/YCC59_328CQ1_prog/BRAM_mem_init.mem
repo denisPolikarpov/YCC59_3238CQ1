@@ -1,8 +1,8 @@
 // Service constants (non-read, no-write mem space)
-@00 15
-@01 D5
-@02 A5
-@03 A0
+@00 57
+@01 54
+@02 A4
+@03 68
 // Fifth channel options
 @04 00
 @05 00
