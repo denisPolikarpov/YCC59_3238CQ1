@@ -56,6 +56,7 @@ module YCC59_328CQ1_programm
     localparam logic [11 : 0] BOOT_FUNC_SEQ = 12'h380;
     localparam logic [11 : 0] LATCH_TRANNS  = 12'h11F;
     // Internal constants
+    localparam int unsigned NUM_OF_SCLK   = 5;
     localparam int unsigned MEM_WIDTH     = 8;
     localparam int unsigned MEM_DEPTH     = 'h29;
     localparam int unsigned ADDR_WIDTH    = 8;
@@ -66,7 +67,9 @@ module YCC59_328CQ1_programm
          enable_counter,
          func_spi_seq,
          spi_data_trans_finished,
-         spi_func_trans_finished;
+         spi_func_trans_finished,
+         start_func_trans_delay,
+         falling_edge_of_SCLK;
     wor  start_data_trans,
          start_func_trans;
          
@@ -112,7 +115,7 @@ module YCC59_328CQ1_programm
 
     assign BRAM_intr_to_SPI.rst = '0;
     assign BRAM_intr_to_SPI.en  = '1;
-    //assign BRAM_intr_to_SPI.we  = (main_fsm_state == 5'b01000) ? '1 : '0;
+    assign BRAM_intr_to_SPI.we  = '0;
     // ----------------------------------------------------------------------------------------------
     // BRAM for options
     BRAM
@@ -172,7 +175,7 @@ module YCC59_328CQ1_programm
     (
         .i_clk, 
         .i_ctrl    (                          start_finish_address_mux_ctrl                         ),
-        .i_signals ( '{MEM_FINAL_ADDRESS, TR_EN_OTHER_ADDR, TR_EN_OTHER_ADDR, PROG_DATA_START_ADDR} ),
+        .i_signals ( '{MEM_FINAL_ADDRESS, TR_EN_OTHER_ADDR, TR_EN_OTHER_ADDR - 1'b1, PROG_DATA_START_ADDR - 1'b1} ),
         .o_signal  (                                  final_address                                 )
     );
     // ----------------------------------------------------------------------------------------------
@@ -195,60 +198,24 @@ module YCC59_328CQ1_programm
         .o_all_trans_finished ( spi_data_trans_finished )
     );
     
-    general_mux
+    func_spi
     #(
-        .INPUT_WIDTH    ( $bits(LATCH_TRANNS) ),
-        .NUM_OF_SIGNALS (          2          ),
-        .SYNC_OR_ASYNC  (       "ASYNC"       )  // "SYNC"   // "ASYNC"
+        .BOOT_FUNC_SEQ   (  BOOT_FUNC_SEQ  ),
+        .LATCH_TRANNS    (   LATCH_TRANNS  ),
+        .NUM_OF_SCLK     (   NUM_OF_SCLK   ),
+        .MAIN_CLK_SIGNAL ( MAIN_CLK_SIGNAL ),
+        .SPI_SCLK_FREQ   (  SPI_SCLK_FREQ  )
     )
-    func_seq_mux
-    (
-        .i_clk, 
-        .i_ctrl    (          func_spi_seq          ),
-        .i_signals ( '{LATCH_TRANNS, BOOT_FUNC_SEQ} ),
-        .o_signal  (        func_seq_to_trans       )
-    );
-    
-    SPI_master
-    #(
-        .INPUT_WIDTH    ( $bits(LATCH_TRANNS) ),
-        .MAIN_CLK_FREQ  (   MAIN_CLK_SIGNAL   ),
-        .SCLK_FREQ      (    SPI_SCLK_FREQ    ),
-        .SCLK_NOT_END   (        "YES"        ),     // "YES"    // "NO"
-        .TRANSMIT_ORDER (        "MSB"        )      // "MSB"    // "LSB"
-    )
-    SPI_function
+    func_spi_inst
     (
         .i_clk,
-        // SPI master interface 
-        .intr_SPI_master ( SPI_FUNC ),
-        // Data to transfer
-        .i_data  ( func_seq_to_trans ),
-        .i_start (  start_func_trans ),
-        // Recieved data
-        .o_recieved_data   (                         ),
-        .o_data_valid      ( spi_func_trans_finished ),
-        .o_transfer_active ( )
+        // SPI Interface
+        .intr_SPI_master  ( SPI_FUNC ),
+        // Other signals
+        .i_start          (     start_func_trans    ),
+        .i_seq_ctrl       (       func_spi_seq      ),
+        .o_trans_finished ( spi_func_trans_finished )
     );
-    // ----------------------------------------------------------------------------------------------
-//    // Delay line 
-//    // First clk cycle is to set new space for counter
-//    // Second clk cycle is to reset counter and bram output register
-//    // Third clk cycle is to wait
-//    // Forth clk sycle is to start data transfer
-//    serial_to_parallel
-//    #(
-//        .OUTPUT_WIDTH (   4   ),
-//        .BIT_ORDER    ( "MSB" )   // "MSB"  // "LSB"
-//    )
-//    serial_to_parallel_inst
-//    (
-//        .i_clk           ( ),
-//        .i_serial        ( ),
-//        .i_reset         ( ),
-//        .i_enable        ( ),
-//        .o_parallel_data ( )
-//    );
     // ----------------------------------------------------------------------------------------------
     // Alias fsm start and finished signal
     alias i_boot_fsm_finished = o_boot_fsm_finished;
@@ -284,5 +251,33 @@ module YCC59_328CQ1_programm
     );
 endmodule : YCC59_328CQ1_programm
 /*
-
+    YCC59_328CQ1_programm
+    #(
+        .MAIN_CLK_SIGNAL       ( 120000000 ),
+        .UNLOCK_SEQ_START_ADDR (    'h00   ),
+        .PROG_DATA_START_ADDR  (    'h04   ),
+        .TR_EN_OTHER_ADDR      (    'h18   ),
+        .SELFTEST_START_ADDR   (    'h19   ),
+        .MEM_FINAL_ADDRESS     (    'h2C   )
+    )
+    YCC59_328CQ1_programm_inst
+    (
+        .i_clk ( ),
+        // TR and EN control signals
+        .o_TR1 ( ),
+        .o_TR2 ( ),
+        .o_EN  ( ),
+        // Data SPI signals
+        .o_DEN  ( ),
+        .o_CLK  ( ),
+        .o_DIN  ( ),
+        .o_OE   ( ),
+        .i_DOUT ( ),
+        // Function SPI
+        .o_FEN ( ),
+        .o_FIN ( ),
+        // Test outputs
+        .o_main_fsm_state ( ),
+        .o_boot_fsm_state ( )
+    );
 */

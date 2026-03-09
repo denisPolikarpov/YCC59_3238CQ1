@@ -32,13 +32,13 @@ module data_to_spi_former
     // -----------------------------------------------
     // Defenitions
     logic [25 : 0] iternal_register = '0;
-    logic [5  : 0] SRL_of_enable_sig;
+    logic [6  : 0] SRL_of_enable_sig;
     genvar register_part;
     // -----------------------------------------------
     // SRL for rise edge detection pulse
     serial_to_parallel
     #(
-        .OUTPUT_WIDTH (   6   ),
+        .OUTPUT_WIDTH (   7   ),
         .BIT_ORDER    ( "MSB" )   // "MSB"  // "LSB"
     )
     form_signal_enable_for_cn
@@ -51,20 +51,35 @@ module data_to_spi_former
     );
     // -----------------------------------------------
     // Iternal register logic
-    for (register_part = 1; register_part < 5; register_part++) begin
-        always_ff @(posedge i_clk) begin : iternal_register_logic
-            if (register_part == 1) begin
-                if (SRL_of_enable_sig[register_part]) begin
-                    iternal_register[25 : 18] <= i_data_from_bram;
-                end
-            end
-            else begin
-                if (SRL_of_enable_sig[register_part]) begin
-                    iternal_register[17 - 6*(register_part - 2) : 12 - 6*(register_part - 2)] <= i_data_from_bram[7 : 2];
-                end
-            end
-        end : iternal_register_logic
-    end
+    always_ff @(posedge i_clk) begin
+        if (SRL_of_enable_sig[2]) begin
+            iternal_register[25 : 18] <= i_data_from_bram;
+        end
+        if (SRL_of_enable_sig[3]) begin
+            iternal_register[17 : 12] <= i_data_from_bram[7 : 2];
+        end
+        if (SRL_of_enable_sig[4]) begin
+            iternal_register[11 :  6] <= i_data_from_bram[7 : 2];
+        end
+        if (SRL_of_enable_sig[5]) begin
+            iternal_register[5  :  0] <= i_data_from_bram[7 : 2];
+        end
+    end     
+    
+//    for (register_part = 2; register_part < 6; register_part++) begin
+//        always_ff @(posedge i_clk) begin : iternal_register_logic
+//            if (register_part == 2) begin
+//                if (SRL_of_enable_sig[register_part]) begin
+//                    iternal_register[25 : 18] <= i_data_from_bram;
+//                end
+//            end
+//            else begin
+//                if (SRL_of_enable_sig[register_part]) begin
+//                    iternal_register[17 - 6*(register_part - 3) : 12 - 6*(register_part - 3)] <= i_data_from_bram[7 : 2];
+//                end
+//            end
+//        end : iternal_register_logic
+//    end
     // -----------------------------------------------
     // Assigns
     assign o_spi_data   = iternal_register;

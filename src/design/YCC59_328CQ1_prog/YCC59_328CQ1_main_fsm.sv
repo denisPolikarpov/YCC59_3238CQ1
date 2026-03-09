@@ -60,7 +60,7 @@ module YCC59_328CQ1_main_fsm
                     o_start_final_addr_mux  <= 2'b10;
                     o_func_spi_seq          <= '0;
                     o_block_ps_access       <= '0;
-                    o_reset_address_counter <= '0;
+                    o_reset_address_counter <= '1;
                     o_start_boot_fsm        <= '0;
                 end
             end

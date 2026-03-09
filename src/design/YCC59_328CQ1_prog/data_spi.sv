@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
-// Engineer: 
+// Engineer: Polikarpov D. A.
 // 
 // Create Date: 08.03.2026 18:26:20
 // Design Name: 
