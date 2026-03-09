@@ -36,6 +36,7 @@ module YCC59_328CQ1_programm_tb();
     // Test outputs
     logic [4 : 0] o_main_fsm_state;
     logic [3 : 0] o_boot_fsm_state;
+    logic [3 : 0] o_prog_fsm_state;
            
     YCC59_328CQ1_programm
     #(
