@@ -17,66 +17,87 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 
-import YCC59_328CQ1_pkg::*;
-
 module YCC59_328CQ1_main_fsm
 (
     input  logic i_clk,
     // Report signals
     input  logic i_init,
-                 i_data_spi_finished,
-                 i_func_spi_finished,
+                 i_boot_fsm_finished,
     // Control signals
-    output start_addr_mux_te o_mem_start_addr,
-           logic             o_BRAM_read_write,
-                             o_addr_counter_enable,
-                             o_addr_counter_reset,
-                             o_block_ps_access,
-                             o_start_data_spi,
-                             o_start_func_spi
+    output logic [1 : 0] o_start_final_addr_mux,
+           logic         o_func_spi_seq,
+                         o_block_ps_access,
+                         o_reset_address_counter,
+                         o_start_boot_fsm,
+           logic [4 : 0] o_main_fsm_state
 );
 
     enum logic [4 : 0] {
         SLEEP_STATE = 5'b00001,
         BOOT_STATE  = 5'b00010,
-        SELF_TEST   = 5'b00100,
-        WAIT_STATE  = 5'b01000,
+        WAIT_STATE  = 5'b00100,
+        SELF_TEST   = 5'b01000,
         PROG_STATE  = 5'b10000
     } current_state = SLEEP_STATE;
+    
+    assign o_main_fsm_state = current_state;
     
     always_ff @(posedge i_clk) begin
         case(current_state) 
             SLEEP_STATE : begin
                 if (i_init) begin
-                    current_state         <= BOOT_STATE;
+                    current_state           <= BOOT_STATE;
                     
-                    o_mem_start_addr      <= UNLOCK_SEQ;
-                    o_BRAM_read_write     <= '0;
-                    o_addr_counter_enable <= '0;
-                    o_addr_counter_reset  <= '0;
-                    o_block_ps_access     <= '0;
-                    o_start_data_spi      <= '0;
-                    o_start_func_spi      <= '0;
+                    o_start_final_addr_mux  <= 2'b00;
+                    o_func_spi_seq          <= '0;
+                    o_block_ps_access       <= '0;
+                    o_reset_address_counter <= '1;
+                    o_start_boot_fsm        <= '1;
                 end
                 else begin
-                    current_state         <= SLEEP_STATE;
+                    current_state           <= SLEEP_STATE;
                     
-                    o_mem_start_addr      <= TR_EN_OTHER;
-                    o_BRAM_read_write     <= '0;
-                    o_addr_counter_enable <= '0;
-                    o_addr_counter_reset  <= '1;
-                    o_block_ps_access     <= '0;
-                    o_start_data_spi      <= '0;
-                    o_start_func_spi      <= '0;
+                    o_start_final_addr_mux  <= 2'b10;
+                    o_func_spi_seq          <= '0;
+                    o_block_ps_access       <= '0;
+                    o_reset_address_counter <= '0;
+                    o_start_boot_fsm        <= '0;
                 end
             end
             BOOT_STATE  : begin
-            end
-            SELF_TEST   : begin
+                if (i_boot_fsm_finished) begin
+                    current_state           <= WAIT_STATE;
+                    
+                    o_start_final_addr_mux  <= 2'b10;
+                    o_func_spi_seq          <= '0;
+                    o_block_ps_access       <= '0;
+                    o_reset_address_counter <= '1;
+                    o_start_boot_fsm        <= '0;
+                end
+                else begin
+                    current_state           <= BOOT_STATE;
+                    
+                    o_start_final_addr_mux  <= 2'b00;
+                    o_func_spi_seq          <= '0;
+                    o_block_ps_access       <= '0;
+                    o_reset_address_counter <= '0;
+                    o_start_boot_fsm        <= '0;
+                end
             end
             WAIT_STATE  : begin
+                current_state           <= WAIT_STATE;
+                
+                o_start_final_addr_mux  <= 2'b10;
+                o_func_spi_seq          <= '0;
+                o_block_ps_access       <= '0;
+                o_reset_address_counter <= '0;
+                o_start_boot_fsm        <= '0;
+            end
+            SELF_TEST : begin
+            
             end
             PROG_STATE  : begin
+            
             end
         endcase
     end
@@ -88,15 +109,13 @@ endmodule : YCC59_328CQ1_main_fsm
         .i_clk ( ),
         // Report signals
         .i_init              ( ),
-        .i_data_spi_finished ( ),
-        .i_func_spi_finished ( ),
+        .i_boot_fsm_finished ( ),
         // Control signals
-        .o_mem_start_addr      ( ),
-        .o_BRAM_read_write     ( ),
-        .o_addr_counter_enable ( ),
-        .o_addr_counter_reset  ( ),
-        .o_block_ps_access     ( ),
-        .o_start_data_spi      ( ),
-        .o_start_func_spi      ( )
+        .o_start_final_addr_mux  ( ),
+        .o_func_spi_seq          ( ),
+        .o_block_ps_access       ( ),
+        .o_reset_address_counter ( ),
+        .o_start_boot_fsm        ( ),
+        .o_main_fsm_state        ( )
     );
 */
