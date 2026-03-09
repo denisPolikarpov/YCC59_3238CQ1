@@ -48,7 +48,8 @@ module YCC59_328CQ1_programm
                  o_FIN,
     // Test outputs
     output logic [4 : 0] o_main_fsm_state,
-           logic [3 : 0] o_boot_fsm_state
+           logic [3 : 0] o_boot_fsm_state,
+           logic [3 : 0] o_prog_fsm_state
 );
     // -----------------------------------------------
     // Defenitions
@@ -219,20 +220,26 @@ module YCC59_328CQ1_programm
     // ----------------------------------------------------------------------------------------------
     // Alias fsm start and finished signal
     alias i_boot_fsm_finished = o_boot_fsm_finished;
+    alias i_prog_fsm_finished = o_prog_fsm_finished;
     alias i_start_boot_fsm    = o_start_boot_fsm;
+    alias i_start_prog_fsm    = o_start_prog_fsm;
     // MAIN FSM
     YCC59_328CQ1_main_fsm YCC59_328CQ1_main_fsm_inst
     (
         .i_clk,
         // Report signals
         .i_init              ( BRAM_intr_to_SPI.dout[5 : 5] ),
+        .i_programm          ( BRAM_intr_to_SPI.dout[3 : 3] ),
+        .i_begin_selftest    ( BRAM_intr_to_SPI.dout[4 : 4] ),
         .i_boot_fsm_finished,
+        .i_prog_fsm_finished,
         // Control signals
         .o_start_final_addr_mux  ( start_finish_address_mux_ctrl ),
         .o_func_spi_seq          (          func_spi_seq         ),
-        .o_block_ps_access       ( ),
+        .o_block_ps_access       (                               ),
         .o_reset_address_counter (         reset_counter         ),
         .o_start_boot_fsm,
+        .o_start_prog_fsm,
         .o_main_fsm_state
     );
     // BOOT FSM
@@ -248,6 +255,20 @@ module YCC59_328CQ1_programm
         .o_spi_func_init     ( start_func_trans ),
         .o_boot_fsm_finished,
         .o_boot_fsm_state
+    );
+    // PROG FSM
+    YCC59_328CQ1_prog_fsm YCC59_328CQ1_prog_fsm_inst
+    (
+        .i_clk,
+        // Report signals
+        .i_start_prog_fsm,
+        .i_all_data_trans_finished ( spi_data_trans_finished ),
+        .i_func_trans_finished     ( spi_func_trans_finished ),
+        // Controll signals
+        .o_spi_data_init     ( start_data_trans ),
+        .o_spi_func_init     ( start_func_trans ),
+        .o_prog_fsm_finished,
+        .o_prog_fsm_state
     );
 endmodule : YCC59_328CQ1_programm
 /*
@@ -278,6 +299,7 @@ endmodule : YCC59_328CQ1_programm
         .o_FIN ( ),
         // Test outputs
         .o_main_fsm_state ( ),
-        .o_boot_fsm_state ( )
+        .o_boot_fsm_state ( ),
+        .o_prog_fsm_state ( )
     );
 */
