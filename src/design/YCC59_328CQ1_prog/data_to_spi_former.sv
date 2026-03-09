@@ -24,7 +24,6 @@ module data_to_spi_former
 (
     input  logic          i_clk,
                           i_start,
-                          i_reset,
            logic [ 7 : 0] i_data_from_bram,
     output logic          o_enable_cn,
                           o_data_ready,
@@ -34,20 +33,7 @@ module data_to_spi_former
     // Defenitions
     logic [25 : 0] iternal_register = '0;
     logic [5  : 0] SRL_of_enable_sig;
-    wire rise_edge_of_start_sig;
     genvar register_part;
-    // -----------------------------------------------
-    // React only on rise edge of i_start
-    edge_sense
-    #(
-        .EDGE_TO_DETECT ( "RISING" ) // "RISING" // "FALLING" // "BOTH"
-    )
-    rise_edge_of_start_detection
-    (
-        .i_clk,
-        .i_signal (         i_start        ),
-        .o_detect ( rise_edge_of_start_sig )
-    );
     // -----------------------------------------------
     // SRL for rise edge detection pulse
     serial_to_parallel
@@ -58,10 +44,10 @@ module data_to_spi_former
     form_signal_enable_for_cn
     (
         .i_clk,
-        .i_serial        ( rise_edge_of_start_sig ),
-        .i_reset,
-        .i_enable        (           '1           ),
-        .o_parallel_data (   SRL_of_enable_sig    )
+        .i_serial        (      i_start      ),
+        .i_reset         (        '0         ),
+        .i_enable        (        '1         ),
+        .o_parallel_data ( SRL_of_enable_sig )
     );
     // -----------------------------------------------
     // Iternal register logic
@@ -91,7 +77,6 @@ endmodule : data_to_spi_former
     (
         .i_clk            ( ),
         .i_start          ( ),
-        .i_reset          ( ),
         .i_data_from_bram ( ),
         .o_enable_cn      ( ),
         .o_data_ready     ( ),
