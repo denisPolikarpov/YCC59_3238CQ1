@@ -85,7 +85,7 @@ module data_to_spi_former
     assign o_spi_data   = iternal_register;
     assign o_data_ready = SRL_of_enable_sig[5];
     
-    assign o_enable_cn  = SRL_of_enable_sig[0] || SRL_of_enable_sig[1] || SRL_of_enable_sig[2];
+    assign o_enable_cn  = SRL_of_enable_sig[0] || SRL_of_enable_sig[1] || SRL_of_enable_sig[2] || SRL_of_enable_sig[3];
 endmodule : data_to_spi_former
 /*
     data_to_spi_former data_to_spi_former_isnt
