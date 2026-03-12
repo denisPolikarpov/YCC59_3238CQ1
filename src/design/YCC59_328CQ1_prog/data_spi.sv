@@ -31,15 +31,20 @@ module data_spi
     SPI_intr.master intr_SPI_master,
     // Other signals
     input  logic i_start,
+                 i_enable_recieve_data,
            byte  i_data_from_bram,
-    output logic o_enable_address_cn,
+    output byte  o_data_to_bram,
+           logic o_write_data_to_bram,
+                 o_enable_read_address_cn,
+                 o_enable_write_address_cn,
                  o_trans_finished,
                  o_all_trans_finished
 );
     
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Defenition
-    wire [25 : 0] data_to_data_spi;
+    wire [25 : 0] data_to_data_spi,
+                  data_from_data_spi;
     wire start_detected,
          data_ready,
          start_SPI,
@@ -48,7 +53,7 @@ module data_spi
          spi_trans_finished,
          spi_trans_active;
     logic start_data_forming;
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // React only on rise edge of i_start
     edge_sense
     #(
@@ -60,16 +65,26 @@ module data_spi
         .i_signal (     i_start    ),
         .o_detect ( start_detected )
     );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Form data in start or on negedge of intr_SPI_master.CSn or spi_trans_finished
     data_to_spi_former data_to_spi_former_isnt
     (
         .i_clk,
-        .i_start          (  start_data_forming ),
+        .i_start          (    start_data_forming    ),
         .i_data_from_bram,
-        .o_enable_cn      ( o_enable_address_cn ),
-        .o_data_ready     (      data_ready     ),
-        .o_spi_data       (   data_to_data_spi  )
+        .o_enable_cn      ( o_enable_read_address_cn ),
+        .o_data_ready     (        data_ready        ),
+        .o_spi_data       (     data_to_data_spi     )
+    );
+    
+    spi_from_data_former spi_from_data_former_inst
+    (
+        .i_clk,
+        .i_start         ( spi_trans_finished & i_enable_recieve_data ),
+        .i_data_from_spi (              data_from_data_spi            ),
+        .o_enable_cn     (          o_enable_write_address_cn         ),
+        .o_data_ready    (             o_write_data_to_bram           ),
+        .o_bram_data     (                o_data_to_bram              )
     );
     
     edge_sense
@@ -86,7 +101,7 @@ module data_spi
     always_comb begin
         start_data_forming <= start_detected || (start_SPI && spi_trans_detected);
     end
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // SPI start 
     RS_latch 
     #(
@@ -99,7 +114,7 @@ module data_spi
         .i_S   ( data_ready ),
         .o_Q   (  start_SPI )
     );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Count to last transmission
     counter
     #(
@@ -112,14 +127,14 @@ module data_spi
     counter_inst
     (
         .i_clk,
-        .i_reset               (         '0         ),
+        .i_reset               (     ~start_SPI     ),
         .i_enable              ( spi_trans_finished ),
         .i_start_value         (         '0         ),
         .i_final_value         (         '0         ),
         .o_value               (                    ),
         .o_final_value_reached (      stop_SPI      )
     );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Data SPI
     SPI_master
     #(
@@ -138,11 +153,11 @@ module data_spi
         .i_data  ( data_to_data_spi ),
         .i_start (     start_SPI    ),
         // Recieved data
-        .o_recieved_data   (                      ),
+        .o_recieved_data   (  data_from_data_spi  ),
         .o_data_valid      (  spi_trans_finished  ),
         .o_transfer_active (   spi_trans_active   )
     );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Assign block
     assign o_trans_finished     = spi_trans_finished;
     assign o_all_trans_finished = spi_trans_finished && ~start_SPI;
@@ -155,14 +170,18 @@ endmodule : data_spi
     )
     data_spi_inst
     (
-        .i_clk                ( ),
+        .i_clk  ( ),
         // SPI interface
-        .intr_SPI_master      ( ),
+        .intr_SPI_master ( ),
         // Other signals
-        .i_start              ( ),
-        .i_data_from_bram     ( ),
-        .o_enable_address_cn  ( ),
-        .o_trans_finished     ( ),
-        .o_all_trans_finished ( )
+        .i_start                   ( ),
+        .i_enable_recieve_data     ( ),
+        .i_data_from_bram          ( ),
+        .o_data_to_bram            ( ),
+        .o_write_data_to_bram      ( ),
+        .o_enable_read_address_cn, ( ),
+        .o_enable_write_address_cn ( ),
+        .o_trans_finished          ( ),
+        .o_all_trans_finished      ( )
     );
 */

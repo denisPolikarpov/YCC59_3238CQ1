@@ -29,15 +29,16 @@ module YCC59_328CQ1_programm_tb();
           o_CLK,
           o_DIN,
           o_OE;
-    logic i_DOUT;
+    logic i_DOUT = '0;
     // Function SPI
     logic o_FEN,
           o_FIN;
     // Test outputs
     logic [4 : 0] o_main_fsm_state;
-    logic [3 : 0] o_boot_fsm_state;
-    logic [3 : 0] o_prog_fsm_state;
-           
+    logic [2 : 0] o_boot_prog_fsm_state;
+    logic [2 : 0] o_selftest_fsm_state;
+    logic [25 : 0] transmit_seq = 26'h3567F;
+    logic [4 : 0] bit_num = 'd25;
     YCC59_328CQ1_programm
     #(
         .MAIN_CLK_SIGNAL       ( 120000000 ),
@@ -45,7 +46,7 @@ module YCC59_328CQ1_programm_tb();
         .PROG_DATA_START_ADDR  (    'h04   ),
         .TR_EN_OTHER_ADDR      (    'h18   ),
         .SELFTEST_START_ADDR   (    'h19   ),
-        .MEM_FINAL_ADDRESS     (    'h2C   )
+        .MEM_FINAL_ADDRESS     (    'h40   )
     )
     YCC59_328CQ1_programm_DUT
     (
@@ -57,4 +58,15 @@ module YCC59_328CQ1_programm_tb();
         forever #1 i_clk <= ~i_clk;
     end
     
+    always_ff @(negedge o_CLK) begin
+        if (~o_OE & ~o_DEN) begin
+            i_DOUT <= transmit_seq[bit_num];
+            if (bit_num == 'd0) begin
+                bit_num <= 'd25;
+            end
+            else begin
+                bit_num <= bit_num - 'd1;
+            end
+        end
+    end
 endmodule : YCC59_328CQ1_programm_tb

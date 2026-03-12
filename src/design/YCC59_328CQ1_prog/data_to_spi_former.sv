@@ -29,12 +29,11 @@ module data_to_spi_former
                           o_data_ready,
            logic [25 : 0] o_spi_data
 );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Defenitions
     logic [25 : 0] iternal_register = '0;
     logic [6  : 0] SRL_of_enable_sig;
-    genvar register_part;
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // SRL for rise edge detection pulse
     serial_to_parallel
     #(
@@ -49,7 +48,7 @@ module data_to_spi_former
         .i_enable        (        '1         ),
         .o_parallel_data ( SRL_of_enable_sig )
     );
-    // -----------------------------------------------
+    // ----------------------------------------------------------------------------------------------
     // Iternal register logic
     always_ff @(posedge i_clk) begin
         if (SRL_of_enable_sig[2]) begin
@@ -64,23 +63,8 @@ module data_to_spi_former
         if (SRL_of_enable_sig[5]) begin
             iternal_register[5  :  0] <= i_data_from_bram[7 : 2];
         end
-    end     
-    
-//    for (register_part = 2; register_part < 6; register_part++) begin
-//        always_ff @(posedge i_clk) begin : iternal_register_logic
-//            if (register_part == 2) begin
-//                if (SRL_of_enable_sig[register_part]) begin
-//                    iternal_register[25 : 18] <= i_data_from_bram;
-//                end
-//            end
-//            else begin
-//                if (SRL_of_enable_sig[register_part]) begin
-//                    iternal_register[17 - 6*(register_part - 3) : 12 - 6*(register_part - 3)] <= i_data_from_bram[7 : 2];
-//                end
-//            end
-//        end : iternal_register_logic
-//    end
-    // -----------------------------------------------
+    end
+    // ----------------------------------------------------------------------------------------------
     // Assigns
     assign o_spi_data   = iternal_register;
     assign o_data_ready = SRL_of_enable_sig[5];
