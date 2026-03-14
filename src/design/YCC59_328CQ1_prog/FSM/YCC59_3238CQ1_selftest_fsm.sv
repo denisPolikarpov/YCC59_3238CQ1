@@ -42,18 +42,6 @@ module YCC59_3238CQ1_selftest_fsm
     wire delayed_all_data_trans_finished;
     // ----------------------------------------------------------------------------------------------
     // FSM
-    delay
-    #(
-        .DELAY_TIME  ( 6 ),
-        .INPUT_WIDTH ( 1 )
-    )
-    delay_spi_trans_finished
-    (
-        .i_clk,
-        .i_enable  ( '1 ),
-        .i_signal  (    i_all_data_trans_finished    ),
-        .o_delayed ( delayed_all_data_trans_finished )
-    );
     always_ff @(posedge i_clk) begin
         unique case(current_state)
             IDLE_STATE : begin
@@ -75,7 +63,7 @@ module YCC59_3238CQ1_selftest_fsm
                 end
             end
             SPI_TEST_DATA_WRITE_STATE : begin
-                if (delayed_all_data_trans_finished) begin
+                if (i_all_data_trans_finished) begin
                     current_state           <= SPI_TEST_DATA_READ_STATE;
                     
                     o_spi_data_init         <= '1;
@@ -93,7 +81,7 @@ module YCC59_3238CQ1_selftest_fsm
                 end
             end
             SPI_TEST_DATA_READ_STATE : begin
-                if (delayed_all_data_trans_finished) begin
+                if (i_all_data_trans_finished) begin
                     current_state           <= IDLE_STATE;
                     
                     o_spi_data_init         <= '0;

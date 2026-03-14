@@ -1,0 +1,3 @@
+D:/Projects/YCC59_3238CQ1/sdk/platform/zynq_fsbl/build/CMakeFiles/fsbl.elf.dir
+D:/Projects/YCC59_3238CQ1/sdk/platform/zynq_fsbl/build/CMakeFiles/edit_cache.dir
+D:/Projects/YCC59_3238CQ1/sdk/platform/zynq_fsbl/build/CMakeFiles/rebuild_cache.dir

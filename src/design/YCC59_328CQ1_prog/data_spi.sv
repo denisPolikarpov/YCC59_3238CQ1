@@ -23,7 +23,8 @@
 module data_spi
 #(
     parameter int unsigned MAIN_CLK_SIGNAL = 120000000,
-    parameter int unsigned SPI_SCLK_FREQ   = 20000000
+    parameter int unsigned SPI_SCLK_FREQ   = 20000000,
+    parameter int unsigned NUM_OF_SCLK     = 5
 )
 (
     input  logic i_clk,
@@ -51,8 +52,11 @@ module data_spi
          stop_SPI,
          spi_trans_detected,
          spi_trans_finished,
-         spi_trans_active;
-    logic start_data_forming;
+         spi_trans_active,
+         sclk_rising_edge,
+         delayed_trans_finished;
+    logic start_data_forming,
+          reg_all_trans_finished;
     // ----------------------------------------------------------------------------------------------
     // React only on rise edge of i_start
     edge_sense
@@ -158,15 +162,55 @@ module data_spi
         .o_transfer_active (   spi_trans_active   )
     );
     // ----------------------------------------------------------------------------------------------
+    // Delay fo transfers finished
+    edge_sense
+    #(
+        .EDGE_TO_DETECT ( "RISING" ) // "RISING" // "FALLING" // "BOTH"
+    )
+    rise_edges_of_sclk
+    (
+        .i_clk,
+        .i_signal ( intr_SPI_master.SCLK ),
+        .o_detect (   sclk_rising_edge   )
+    );
+    
+    always_ff @(posedge i_clk) begin
+        reg_all_trans_finished <= spi_trans_finished && ~start_SPI;
+    end
+    
+    delay
+    #(
+        .DELAY_TIME  ( NUM_OF_SCLK - 1 ),
+        .INPUT_WIDTH (        1        )
+    )
+    delay_spi_trans_finished
+    (
+        .i_clk,
+        .i_enable  (    sclk_rising_edge    ),
+        .i_signal  ( reg_all_trans_finished ),
+        .o_delayed ( delayed_trans_finished )
+    );
+    
+    edge_sense
+    #(
+        .EDGE_TO_DETECT ( "RISING" ) // "RISING" // "FALLING" // "BOTH"
+    )
+    rise_edge_of_all_trans_finished
+    (
+        .i_clk,
+        .i_signal ( delayed_trans_finished ),
+        .o_detect (  o_all_trans_finished  )
+    );
+    // ----------------------------------------------------------------------------------------------
     // Assign block
-    assign o_trans_finished     = spi_trans_finished;
-    assign o_all_trans_finished = spi_trans_finished && ~start_SPI;
+    assign o_trans_finished = spi_trans_finished;
 endmodule : data_spi
 /*
     data_spi 
     #(
         .MAIN_CLK_SIGNAL ( 120000000 ),
-        .SPI_SCLK_FREQ   (  20000000 )
+        .SPI_SCLK_FREQ   (  20000000 ),
+        .NUM_OF_SCLK     (     5     )
     )
     data_spi_inst
     (

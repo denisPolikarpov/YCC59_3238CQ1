@@ -26,7 +26,6 @@ module func_spi
 #(
     parameter logic [11 : 0] BOOT_FUNC_SEQ   = 12'h380,
     parameter logic [11 : 0] LATCH_TRANNS    = 12'h11F,
-    parameter int unsigned   NUM_OF_SCLK     = 5,
     parameter int unsigned   MAIN_CLK_SIGNAL = 120000000,
     parameter int unsigned   SPI_SCLK_FREQ   = 20000000
 )
@@ -71,19 +70,6 @@ module func_spi
         .i_signal ( intr_SPI_master.SCLK ),
         .o_detect ( falling_edge_of_SCLK )
     );
-    
-    delay
-    #(
-        .DELAY_TIME  ( NUM_OF_SCLK ),
-        .INPUT_WIDTH (      1      )
-    )
-    delay_inst
-    (
-        .i_clk,
-        .i_enable  (  falling_edge_of_SCLK  ),
-        .i_signal  (         i_start        ),
-        .o_delayed ( start_func_trans_delay )
-    );
     // -----------------------------------------------
     // Sequance to transmit mux
     SPI_master
@@ -100,8 +86,8 @@ module func_spi
         // SPI master interface 
         .intr_SPI_master,
         // Data to transfer
-        .i_data  (    func_seq_to_trans   ),
-        .i_start ( start_func_trans_delay ),
+        .i_data  ( func_seq_to_trans ),
+        .i_start (      i_start      ),
         // Recieved data
         .o_recieved_data   (                  ),
         .o_data_valid      ( o_trans_finished ),
@@ -113,7 +99,6 @@ endmodule : func_spi
     #(
         .BOOT_FUNC_SEQ   (  12'h380  ),
         .LATCH_TRANNS    (  12'h11F  ),
-        .NUM_OF_SCLK     (     5     ),
         .MAIN_CLK_SIGNAL ( 120000000 ),
         .SPI_SCLK_FREQ   (  20000000 )
     )

@@ -34,6 +34,8 @@ module YCC59_328CQ1_programm
 )
 (
     input  logic i_clk,
+    // BRAM interface to AXI
+    BRAM_memory_intr.mem intr_to_bram,
     // TR and EN control signals
     output logic o_TR1,
                  o_TR2,
@@ -50,7 +52,11 @@ module YCC59_328CQ1_programm
     // Test outputs
     output logic [4 : 0] o_main_fsm_state,
            logic [2 : 0] o_boot_prog_fsm_state,
-           logic [2 : 0] o_selftest_fsm_state
+           logic [2 : 0] o_selftest_fsm_state,
+           logic [7 : 0] o_addr,
+                         o_din,
+                         o_dout,
+           logic         o_we
 );
     // ----------------------------------------------------------------------------------------------
     // Defenitions
@@ -101,6 +107,13 @@ module YCC59_328CQ1_programm
         .clk ( i_clk )
     );
     
+    assign BRAM_intr_to_mem.addr = intr_to_bram.addr;
+    assign BRAM_intr_to_mem.clk  = intr_to_bram.clk;
+    assign BRAM_intr_to_mem.din  = intr_to_bram.din;
+    assign intr_to_bram.dout     = BRAM_intr_to_mem.dout;
+    assign BRAM_intr_to_mem.en   = intr_to_bram.en;
+    assign BRAM_intr_to_mem.rst  = intr_to_bram.rst;
+    
     BRAM_memory_intr
     #(
         .DATA_WIDTH    (  MEM_WIDTH ),
@@ -115,7 +128,7 @@ module YCC59_328CQ1_programm
     assign BRAM_intr_to_SPI.en  = '1;
     assign BRAM_intr_to_SPI.we  = '{default : bram_we};
     // ----------------------------------------------------------------------------------------------
-    // BRAM for options
+    // BRAM
     BRAM
     #(
         .MEMORY_DEPTH     (      MEM_DEPTH      ),
@@ -123,7 +136,7 @@ module YCC59_328CQ1_programm
         .TYPE_OF_MEMORY   (  "HIGH_PERFOMANCE"  ),   // "LOW_LATENCY"         // "HIGH_PERFOMANCE"
         .MEMORY_INIT_FILE ( "BRAM_mem_init.mem" )
     )
-    BRAM_options
+    BRAM_inst
     (
         .mem_bus_a ( BRAM_intr_to_mem ),
         .mem_bus_b ( BRAM_intr_to_SPI )
@@ -153,8 +166,9 @@ module YCC59_328CQ1_programm
     // SPIs
     data_spi
     #(
-        .MAIN_CLK_SIGNAL ( MAIN_CLK_SIGNAL ),
-        .SPI_SCLK_FREQ   (  SPI_SCLK_FREQ  )
+        .MAIN_CLK_SIGNAL (    MAIN_CLK_SIGNAL   ),
+        .SPI_SCLK_FREQ   (     SPI_SCLK_FREQ    ),
+        .NUM_OF_SCLK     ( NUM_OF_CLKS_BEETWEEN )
     )
     data_spi_inst
     (
@@ -177,7 +191,6 @@ module YCC59_328CQ1_programm
     #(
         .BOOT_FUNC_SEQ   (     BOOT_FUNC_SEQ    ),
         .LATCH_TRANNS    (     LATCH_TRANNS     ),
-        .NUM_OF_SCLK     ( NUM_OF_CLKS_BEETWEEN ),
         .MAIN_CLK_SIGNAL (    MAIN_CLK_SIGNAL   ),
         .SPI_SCLK_FREQ   (     SPI_SCLK_FREQ    )
     )
@@ -236,6 +249,13 @@ module YCC59_328CQ1_programm
             o_TR2 <= BRAM_intr_to_SPI.dout[2 : 2];
         end
     end : register
+    // ----------------------------------------------------------------------------------------------
+    // Assign block
+    assign o_addr = BRAM_intr_to_SPI.addr;
+    assign o_din  = BRAM_intr_to_SPI.din;
+    assign o_dout = BRAM_intr_to_SPI.dout;
+    assign o_we   = BRAM_intr_to_SPI.we;
+    
 endmodule : YCC59_328CQ1_programm
 /*
     YCC59_328CQ1_programm
@@ -245,11 +265,13 @@ endmodule : YCC59_328CQ1_programm
         .PROG_DATA_START_ADDR  (    'h04   ),
         .TR_EN_OTHER_ADDR      (    'h18   ),
         .SELFTEST_START_ADDR   (    'h19   ),
-        .MEM_FINAL_ADDRESS     (    'h2C   )
+        .MEM_FINAL_ADDRESS     (    'h40   )
     )
     YCC59_328CQ1_programm_inst
     (
         .i_clk ( ),
+        // BRAM interface to AXI
+        .BRAM_intr_to_SPI ( ),
         // TR and EN control signals
         .o_TR1 ( ),
         .o_TR2 ( ),
@@ -264,8 +286,12 @@ endmodule : YCC59_328CQ1_programm
         .o_FEN ( ),
         .o_FIN ( ),
         // Test outputs
-        .o_main_fsm_state ( ),
-        .o_boot_fsm_state ( ),
-        .o_prog_fsm_state ( )
+        .o_main_fsm_state      ( ),
+        .o_boot_prog_fsm_state ( ),
+        .o_selftest_fsm_state  ( ),
+        .o_addr                ( ),
+        .o_din                 ( ),
+        .o_dout                ( ),
+        .o_we                  ( )
     );
 */

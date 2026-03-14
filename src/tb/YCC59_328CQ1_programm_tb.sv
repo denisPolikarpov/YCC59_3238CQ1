@@ -39,6 +39,20 @@ module YCC59_328CQ1_programm_tb();
     logic [2 : 0] o_selftest_fsm_state;
     logic [25 : 0] transmit_seq = 26'h3567F;
     logic [4 : 0] bit_num = 'd25;
+    logic [7 : 0] o_addr,
+                  o_din, 
+                  o_dout;
+    logic         o_we;
+    BRAM_memory_intr
+    #(
+        .DATA_WIDTH    ( 8 ),
+        .ADDRESS_WIDTH ( 8 )
+    ) 
+    intr_to_bram
+    ( 
+        .clk ( i_clk )
+    );
+    
     YCC59_328CQ1_programm
     #(
         .MAIN_CLK_SIGNAL       ( 120000000 ),
